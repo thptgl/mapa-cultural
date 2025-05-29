@@ -769,27 +769,36 @@ const analytics = getAnalytics(app);
                 this.renderMap();
             }
 
-            loadData() {
-                const savedPlaces = localStorage.getItem('culturalMapPlaces');
-                const savedFavorites = localStorage.getItem('culturalMapFavorites');
-                const savedTrail = localStorage.getItem('culturalMapTrail');
+async loadData() {
+  // Carregar lugares
+  const placesSnapshot = await db.collection("places").get();
+  this.places = placesSnapshot.docs.map(doc => doc.data());
 
-                if (savedPlaces) {
-                    this.places = JSON.parse(savedPlaces);
-                }
-                if (savedFavorites) {
-                    this.favorites = JSON.parse(savedFavorites);
-                }
-                if (savedTrail) {
-                    this.trail = JSON.parse(savedTrail);
-                }
-            }
+  // Carregar favoritos
+  const favSnapshot = await db.collection("favorites").get();
+  this.favorites = favSnapshot.docs.map(doc => doc.data().id); // cada doc tem { id }
 
-            saveData() {
-                localStorage.setItem('culturalMapPlaces', JSON.stringify(this.places));
-                localStorage.setItem('culturalMapFavorites', JSON.stringify(this.favorites));
-                localStorage.setItem('culturalMapTrail', JSON.stringify(this.trail));
-            }
+  // Carregar trilha
+  const trailSnapshot = await db.collection("trail").get();
+  this.trail = trailSnapshot.docs.map(doc => doc.data().id); // cada doc tem { id }
+}
+
+saveData() {
+    // Salvar locais culturais
+    this.places.forEach(place => {
+        db.collection("places").doc(place.id.toString()).set(place);
+    });
+
+    // Salvar favoritos (apenas os IDs)
+    this.favorites.forEach(id => {
+        db.collection("favorites").doc(id.toString()).set({ id: id });
+    });
+
+    // Salvar trilha (apenas os IDs)
+    this.trail.forEach(id => {
+        db.collection("trail").doc(id.toString()).set({ id: id });
+    });
+}
 
             getTypeIcon(type) {
                 const icons = {
